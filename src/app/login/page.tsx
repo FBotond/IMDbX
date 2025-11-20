@@ -43,25 +43,12 @@ export default function LoginPage() {
       return;
     }
 
-    // Két külön hívás, hogy biztosan működjön a session politikád
+    const loginResponse = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    let loginResponse;
-
-    if (keepLoggedIn) {
-      // Permanent session (refresh token + stays logged in)
-      loginResponse = await supabase.auth.signInWithPassword(
-        { email, password },
-        { persistSession: true }
-      );
-    } else {
-      //Session-only login (browser close = logout)
-      loginResponse = await supabase.auth.signInWithPassword(
-        { email, password },
-        { persistSession: false }
-      );
-    }
-
-    const { error: loginError } = loginResponse;
+    const { error: loginError, data } = loginResponse;
 
     if (loginError) {
       if (loginError.message.includes("Invalid login credentials")) {
@@ -72,9 +59,14 @@ export default function LoginPage() {
       return;
     }
 
-    //If NOT keep logged in, then force remove all persistent tokens
+    //If NOT keep logged in:del refresh token
     if (!keepLoggedIn) {
-      // Clear supabase persistent storage
+      //session-only login: refresh token törlése
+      await supabase.auth.updateUser({
+        data: { force_session_only: true },
+      });
+
+      // Biztonsági törlés minden persistent storage-ből
       Object.keys(localStorage).forEach((key) => {
         if (key.includes("supabase") || key.includes("sb-")) {
           localStorage.removeItem(key);
