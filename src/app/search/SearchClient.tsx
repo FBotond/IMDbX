@@ -66,7 +66,6 @@ export default function SearchClient() {
   const handleSearch = async () => {
     if (!query.trim()) return;
 
-    // log search query
     await logSearch("query", query);
 
     setLoading(true);
@@ -101,30 +100,24 @@ export default function SearchClient() {
     }
   };
 
-  // HÁROM HELYEN LOGOLUNK
-
-  // Genre change
   const handleGenreChange = (e: any) => {
     const value = e.target.value;
     setGenre(value);
     logSearch("genre", value);
   };
 
-  // Language change
   const handleLanguageChange = (e: any) => {
     const value = e.target.value;
     setLanguage(value);
     logSearch("language", value);
   };
 
-  // Rating change
   const handleRatingChange = (e: any) => {
     const value = e.target.value;
     setRatingFilter(value);
     logSearch("rating", value);
   };
 
-  // APPLY FILTERS
   let filtered = [...results];
 
   if (genre) {
@@ -172,7 +165,6 @@ export default function SearchClient() {
           Here you can search for movies!
         </h1>
 
-        {/* FILTER BAR */}
         <div
           className="
     bg-blue-100 border border-blue-300 p-4 rounded-xl shadow-md w-full 
@@ -189,7 +181,6 @@ export default function SearchClient() {
 
           <div className={`${filtersOpen ? "block" : "hidden"} sm:block`}>
             <div className="flex flex-col sm:flex-row w-full items-center sm:items-end">
-              {/* GENRE */}
               <div className="flex-1 flex justify-start mb-6 sm:mb-0">
                 <div className="flex flex-col text-center sm:text-left">
                   <label className="font-semibold text-blue-800 mb-1">
@@ -210,9 +201,7 @@ export default function SearchClient() {
                 </div>
               </div>
 
-              {/* LANGUAGE / RATING */}
               <div className="flex-[2] flex flex-col sm:flex-row gap-2 sm:gap-32 justify-center items-center text-center sm:text-left">
-                {/* LANGUAGE */}
                 <div className="flex flex-col">
                   <label className="font-semibold text-blue-800 mb-1">
                     Language
@@ -231,7 +220,6 @@ export default function SearchClient() {
                   </select>
                 </div>
 
-                {/* RATING */}
                 <div className="flex flex-col">
                   <label className="font-semibold text-blue-800 mb-1">
                     Rating
@@ -248,7 +236,6 @@ export default function SearchClient() {
                   </select>
                 </div>
 
-                {/* SORT BLOCK — unchanged */}
                 <div className="flex flex-col">
                   <label className="font-semibold text-blue-800 mb-1">
                     Sort by
@@ -264,7 +251,6 @@ export default function SearchClient() {
                 </div>
               </div>
 
-              {/* RESET BUTTON */}
               <div className="flex-1 font-semibold text-white flex justify-end mt-6 sm:mt-0 !pr-2 sm:pr-10">
                 <button
                   onClick={handleResetFilters}
@@ -277,7 +263,6 @@ export default function SearchClient() {
           </div>
         </div>
 
-        {/* SEARCHBAR BLOCK */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -327,12 +312,10 @@ export default function SearchClient() {
                       ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
                       : undefined
                   }
-                  movieData={movie}
                 />
               ))}
             </div>
 
-            {/* PAGINATION */}
             <div className="flex justify-center items-center gap-6 mt-10">
               <button
                 disabled={page === 1}
