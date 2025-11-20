@@ -8,7 +8,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  //  oldalt elhagyva törlődik
   useEffect(() => {
     return () => {
       setEmail("");
@@ -17,30 +16,25 @@ export default function RegisterPage() {
     };
   }, []);
 
-  // EMAIL VALIDATION
   function isValidEmail(email: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  // PASSWORD VALIDATION (min 8 karakter, legalább 1 betű + 1 szám)
   function isValidPassword(password: string) {
     const hasLetter = /[a-zA-Z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
     return password.length >= 8 && hasLetter && hasNumber;
   }
 
-  // reg kezelés
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
 
-    // Email formátum ellenőrzés
     if (!isValidEmail(email)) {
       setMessage("Invalid email format.");
       return;
     }
 
-    //Jelszó szabályok ellenőrzése
     if (!isValidPassword(password)) {
       setMessage(
         "Password must be at least 8 characters long and include letters and numbers."
@@ -48,23 +42,15 @@ export default function RegisterPage() {
       return;
     }
 
-    // EMAIL LÉTEZÉS ELLENŐRZÉS
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password: "wrong_password_123456789",
-    });
-
-    //Invalid login credentials
-    if (signInError && signInError.message === "Invalid login credentials") {
-      setMessage("This email is already registered.");
-      return;
-    }
-
-    //REGISZTRÁCIÓ
+    // regisztráció
     const { error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
-      setMessage(error.message);
+      if (error.code === "user_already_exists") {
+        setMessage("This email is already registered.");
+      } else {
+        setMessage(error.message);
+      }
       return;
     }
 
@@ -91,7 +77,7 @@ export default function RegisterPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          autoComplete="nope" // autofill OFF
+          autoComplete="nope"
           name="new-email-field"
         />
 
@@ -102,7 +88,7 @@ export default function RegisterPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          autoComplete="new-password" // autofill OFF
+          autoComplete="new-password"
           name="new-password-field"
         />
 
