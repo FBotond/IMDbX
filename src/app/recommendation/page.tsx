@@ -106,11 +106,18 @@ export default function RecommendationPage() {
     load();
   }, [session]);
 
-  function mostFrequent(arr: string[]) {
-    if (arr.length === 0) return null;
-    const map: any = {};
-    arr.forEach((v) => (map[v] = (map[v] || 0) + 1));
-    return Object.entries(map).sort((a, b) => b[1] - a[1])[0][0];
+  function mostFrequent(arr: any[]) {
+    if (!arr.length) return null;
+
+    const map: Record<string, number> = {};
+
+    arr.forEach((v) => {
+      map[v] = (map[v] || 0) + 1;
+    });
+
+    return Object.entries(map).sort(
+      (a, b) => Number(b[1]) - Number(a[1])
+    )[0][0];
   }
 
   if (!session)
