@@ -23,6 +23,7 @@ export async function middleware(req: NextRequest) {
             name,
             value: "",
             ...options,
+            maxAge: 0,
           });
         },
       },
