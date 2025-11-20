@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  //Store previous URL for redirect after login
   useEffect(() => {
     const previousUrl = document.referrer;
 
@@ -24,7 +23,6 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Clear fields when leaving the page
   useEffect(() => {
     return () => {
       setEmail("");
@@ -59,31 +57,15 @@ export default function LoginPage() {
       return;
     }
 
-    //If NOT keep logged in: session-only login
+    // SESSION-ONLY LOGIN (nem marad bejelentkezve)
     if (!keepLoggedIn) {
-      // Delete all persistent tokens
-      Object.keys(localStorage).forEach((key) => {
-        if (key.includes("supabase") || key.includes("sb-")) {
-          localStorage.removeItem(key);
-        }
+      await supabase.auth.signOut();
+
+      await supabase.auth.setSession({
+        access_token: data.session!.access_token,
+        refresh_token: "",
       });
-
-      Object.keys(sessionStorage).forEach((key) => {
-        if (key.includes("supabase") || key.includes("sb-")) {
-          sessionStorage.removeItem(key);
-        }
-      });
-
-      // Store session in sessionStorage
-      if (data?.session) {
-        sessionStorage.setItem("sb-session", JSON.stringify(data.session));
-      }
-
-      // Tell middleware that sessionStorage session exists
-      document.cookie = "sessionStorageSession=true; path=/";
     }
-
-    //REDIRECT HANDLING
 
     const redirectUrl = localStorage.getItem("redirectAfterLogin");
 
@@ -123,7 +105,6 @@ export default function LoginPage() {
             name="login-password-field"
           />
 
-          {/* Maradjak bejelentkezve */}
           <label className="flex items-center gap-2 mb-3 text-blue-800">
             <input
               type="checkbox"
