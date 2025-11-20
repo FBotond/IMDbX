@@ -55,7 +55,7 @@ export default function HomePage() {
               year={
                 hottestMovie.release_date
                   ? parseInt(hottestMovie.release_date.substring(0, 4))
-                  : "N/A"
+                  : undefined
               }
               rating={hottestMovie.vote_average}
               poster={
