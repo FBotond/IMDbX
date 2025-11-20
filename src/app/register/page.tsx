@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function RegisterPage() {
@@ -8,24 +8,79 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  // ────────────── CLEANUP: oldalt elhagyva törlődik ──────────────
+  useEffect(() => {
+    return () => {
+      setEmail("");
+      setPassword("");
+      setMessage("");
+    };
+  }, []);
+
+  // EMAIL VALIDATION
+  function isValidEmail(email: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  // PASSWORD VALIDATION (min 8 karakter, legalább 1 betű + 1 szám)
+  function isValidPassword(password: string) {
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    return password.length >= 8 && hasLetter && hasNumber;
+  }
+
+  // ────────────── HANDLE REGISTER ──────────────
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    setMessage("");
 
+    // 1) Email formátum ellenőrzés
+    if (!isValidEmail(email)) {
+      setMessage("Invalid email format.");
+      return;
+    }
+
+    // 2) Jelszó szabályok ellenőrzése
+    if (!isValidPassword(password)) {
+      setMessage(
+        "Password must be at least 8 characters long and include letters and numbers."
+      );
+      return;
+    }
+
+    // 3) EMAIL LÉTEZÉS ELLENŐRZÉS (Supabase hack)
+    // Megpróbálunk belépni egy garantáltan hibás jelszóval
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: "wrong_password_123456789",
+    });
+
+    // Ha a hiba "Invalid login credentials" → létezik az email
+    if (signInError && signInError.message === "Invalid login credentials") {
+      setMessage("This email is already registered.");
+      return;
+    }
+
+    // Ha más típusú hiba van → ez jó → nincs ilyen email → mehet a regisztráció
+
+    // 4) REGISZTRÁCIÓ
     const { error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
       setMessage(error.message);
-    } else {
-      setMessage(
-        "Registration successful! Check your email to verify your account."
-      );
+      return;
     }
+
+    setMessage(
+      "Registration successful! Check your email to verify your account."
+    );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <form
         onSubmit={handleRegister}
+        autoComplete="off"
         className="bg-blue-100 p-6 rounded-xl shadow-md w-full max-w-md"
       >
         <h1 className="text-2xl font-bold text-blue-800 mb-4">
@@ -39,6 +94,8 @@ export default function RegisterPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="nope" // autofill OFF
+          name="new-email-field"
         />
 
         <input
@@ -48,6 +105,8 @@ export default function RegisterPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="new-password" // autofill OFF
+          name="new-password-field"
         />
 
         <button

@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { searchMovies, getPopularMovies } from "@/lib/tmdb";
 import SearchMovieCard from "../components/SearchMovieCard";
 
+import { supabase } from "@/lib/supabaseClient"; // 🔥 NEW
+import useSession from "@/hooks/useSession"; // 🔥 NEW
+
 export default function SearchClient() {
+  const session = useSession(); // 🔥 NEW
+
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,7 +22,18 @@ export default function SearchClient() {
   const [genres, setGenres] = useState<any[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const pageSize = 20; // 4 sor * 5 oszlop desktopon, 10 sor * 2 oszlop mobilon
+  const pageSize = 20;
+
+  // 🔥 NEW - Logging helper
+  const logSearch = async (action: string, value: string) => {
+    if (!session) return; // csak bejelentkezve logoljuk
+
+    await supabase.from("search_logs").insert({
+      user_id: session.user.id,
+      action,
+      value,
+    });
+  };
 
   useEffect(() => {
     async function loadPopular() {
@@ -50,9 +66,13 @@ export default function SearchClient() {
 
   const handleSearch = async () => {
     if (!query.trim()) return;
+
+    // 🔥 NEW — log search query
+    await logSearch("query", query);
+
     setLoading(true);
     setError("");
-    setPage(1); // keresésnél vissza 1. oldalra
+    setPage(1);
 
     try {
       const movies = await searchMovies(query);
@@ -82,23 +102,42 @@ export default function SearchClient() {
     }
   };
 
-  // LAPOZÁS – a megfelelő szelet kivágása
+  // FILTER LOGGING — 🔥 HÁROM HELYEN LOGOLUNK
+
+  // Genre change
+  const handleGenreChange = (e: any) => {
+    const value = e.target.value;
+    setGenre(value);
+    logSearch("genre", value); // 🔥 NEW
+  };
+
+  // Language change
+  const handleLanguageChange = (e: any) => {
+    const value = e.target.value;
+    setLanguage(value);
+    logSearch("language", value); // 🔥 NEW
+  };
+
+  // Rating change
+  const handleRatingChange = (e: any) => {
+    const value = e.target.value;
+    setRatingFilter(value);
+    logSearch("rating", value); // 🔥 NEW
+  };
+
   // APPLY FILTERS
   let filtered = [...results];
 
-  // filter by genre
   if (genre) {
     filtered = filtered.filter((movie) =>
       movie.genre_ids?.includes(parseInt(genre))
     );
   }
 
-  // filter by language
   if (language) {
     filtered = filtered.filter((movie) => movie.original_language === language);
   }
 
-  // filter by rating
   if (ratingFilter === "low") {
     filtered = filtered.filter((m) => m.vote_average < 5.0);
   }
@@ -111,7 +150,6 @@ export default function SearchClient() {
     filtered = filtered.filter((m) => m.vote_average >= 8.0);
   }
 
-  // SORT RESULTS BY RELEASE DATE
   filtered.sort((a, b) => {
     const d1 = new Date(a.release_date).getTime();
     const d2 = new Date(b.release_date).getTime();
@@ -135,7 +173,7 @@ export default function SearchClient() {
           Here you can search for movies!
         </h1>
 
-        {/* FILTER BAR ─ MOBILE: collapsed, DESKTOP: normal */}
+        {/* FILTER BAR */}
         <div
           className="
     bg-blue-100 border border-blue-300 p-4 rounded-xl shadow-md w-full 
@@ -143,7 +181,6 @@ export default function SearchClient() {
   "
           style={{ marginBottom: "1rem" }}
         >
-          {/* --- MOBILE ONLY: TOGGLE BUTTON --- */}
           <button
             onClick={() => setFiltersOpen(!filtersOpen)}
             className="sm:hidden w-full px-4 py-2 bg-blue-800 text-white rounded-lg font-semibold mb-4"
@@ -151,10 +188,9 @@ export default function SearchClient() {
             {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
           </button>
 
-          {/* --- FILTER CONTENT --- */}
           <div className={`${filtersOpen ? "block" : "hidden"} sm:block`}>
             <div className="flex flex-col sm:flex-row w-full items-center sm:items-end">
-              {/* BAL OLDAL – GENRE */}
+              {/* GENRE */}
               <div className="flex-1 flex justify-start mb-6 sm:mb-0">
                 <div className="flex flex-col text-center sm:text-left">
                   <label className="font-semibold text-blue-800 mb-1">
@@ -162,8 +198,8 @@ export default function SearchClient() {
                   </label>
                   <select
                     value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white focus:ring-2 focus:ring-blue-400"
+                    onChange={handleGenreChange} // 🔥 NEW
+                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="">All</option>
                     {genres.map((g) => (
@@ -175,7 +211,7 @@ export default function SearchClient() {
                 </div>
               </div>
 
-              {/* KÖZÉPSŐ BLOKK – LANGUAGE / RATING / SORT */}
+              {/* LANGUAGE / RATING */}
               <div className="flex-[2] flex flex-col sm:flex-row gap-2 sm:gap-32 justify-center items-center text-center sm:text-left">
                 {/* LANGUAGE */}
                 <div className="flex flex-col">
@@ -184,8 +220,8 @@ export default function SearchClient() {
                   </label>
                   <select
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white focus:ring-2 focus:ring-blue-400"
+                    onChange={handleLanguageChange} // 🔥 NEW
+                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="">All</option>
                     <option value="en">English</option>
@@ -203,8 +239,8 @@ export default function SearchClient() {
                   </label>
                   <select
                     value={ratingFilter}
-                    onChange={(e) => setRatingFilter(e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white focus:ring-2 focus:ring-blue-400"
+                    onChange={handleRatingChange} // 🔥 NEW
+                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="all">All</option>
                     <option value="low">Below 5.0</option>
@@ -213,7 +249,7 @@ export default function SearchClient() {
                   </select>
                 </div>
 
-                {/* SORT */}
+                {/* SORT BLOCK — unchanged */}
                 <div className="flex flex-col">
                   <label className="font-semibold text-blue-800 mb-1">
                     Sort by
@@ -221,7 +257,7 @@ export default function SearchClient() {
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white focus:ring-2 focus:ring-blue-400"
+                    className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="newest">Newest first</option>
                     <option value="oldest">Oldest first</option>
@@ -229,7 +265,7 @@ export default function SearchClient() {
                 </div>
               </div>
 
-              {/* RESET BUTTON (desktop jobb oldal) */}
+              {/* RESET BUTTON */}
               <div className="flex-1 font-semibold text-white flex justify-end mt-6 sm:mt-0 !pr-2 sm:pr-10">
                 <button
                   onClick={handleResetFilters}
@@ -249,7 +285,6 @@ export default function SearchClient() {
             handleSearch();
           }}
           className="flex flex-col sm:flex-row sm:justify-between items-center w-full gap-6 sm:gap-20"
-          style={{ marginBottom: "1rem" }}
         >
           <div className="bg-blue-800 text-white p-6 rounded-xl shadow-md w-full sm:w-1/2">
             <input
@@ -257,7 +292,7 @@ export default function SearchClient() {
               placeholder="Search for a movie..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full px-4 py-2 bg-blue-700 text-white placeholder-blue-300 rounded-lg border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="w-full px-4 py-2 bg-blue-700 text-white placeholder-blue-300 rounded-lg border border-blue-600"
             />
           </div>
 
@@ -293,12 +328,12 @@ export default function SearchClient() {
                       ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
                       : undefined
                   }
-                  movieData={movie} // 🔥 TELJES TMDb ADAT!
+                  movieData={movie}
                 />
               ))}
             </div>
 
-            {/* LAPOZÓ GOMBOK */}
+            {/* PAGINATION */}
             <div className="flex justify-center items-center gap-6 mt-10">
               <button
                 disabled={page === 1}

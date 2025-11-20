@@ -7,7 +7,9 @@ export const metadata = {
     default: "IMDbX",
     template: "%s | IMDbX",
   },
-  description: "Your personalized movie platform.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

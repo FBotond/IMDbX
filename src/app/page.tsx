@@ -10,7 +10,7 @@ export default function Home() {
       <div className="p-10 bg-white/10 rounded-2xl backdrop-blur-md shadow-lg">
         <h1 className="text-5xl font-extrabold mb-6">Welcome to IMDbX!</h1>
         <p className="text-lg text-blue-100 mb-8">
-          Your personalized movie rating and recommendation platform.
+          Your personalized movie searching and recommendation platform.
         </p>
         <Link
           href="/home"

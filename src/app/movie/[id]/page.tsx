@@ -3,6 +3,8 @@
 import { useEffect, useState, use } from "react";
 import { getMovieDetails } from "@/lib/tmdb";
 import Image from "next/image";
+import useSession from "@/hooks/useSession";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function MovieDetailsPage({
   params,
@@ -14,12 +16,41 @@ export default function MovieDetailsPage({
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
 
-  // Favorites check
+  const session = useSession();
+
+  // 🔥 NEW — film megnyitás logolása a recommendation rendszerhez
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("favorites") || "[]");
-    setIsFavorite(stored.includes(movieId));
-  }, [movieId]);
+    if (!session) return;
+
+    supabase.from("search_logs").insert({
+      user_id: session.user.id,
+      action: "open_movie",
+      value: movieId.toString(),
+    });
+  }, [session, movieId]);
+
+  // Supabase: kedvenc státusz betöltése
+  useEffect(() => {
+    const loadFavorite = async () => {
+      if (!session) {
+        setIsFavorite(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("movie_id", movieId)
+        .maybeSingle();
+
+      setIsFavorite(!!data);
+    };
+
+    loadFavorite();
+  }, [session, movieId]);
 
   // Load movie details
   useEffect(() => {
@@ -36,17 +67,30 @@ export default function MovieDetailsPage({
     load();
   }, [movieId]);
 
-  const toggleFavorite = () => {
-    const stored = JSON.parse(localStorage.getItem("favorites") || "[]");
+  // Supabase kedvenc hozzáadás / törlés
+  const toggleFavorite = async () => {
+    if (!session) return;
+
+    setFavLoading(true);
 
     if (isFavorite) {
-      const updated = stored.filter((id: number) => id !== movieId);
-      localStorage.setItem("favorites", JSON.stringify(updated));
+      await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", session.user.id)
+        .eq("movie_id", movieId);
+
       setIsFavorite(false);
     } else {
-      localStorage.setItem("favorites", JSON.stringify([...stored, movieId]));
+      await supabase.from("favorites").insert({
+        user_id: session.user.id,
+        movie_id: movieId,
+      });
+
       setIsFavorite(true);
     }
+
+    setFavLoading(false);
   };
 
   if (loading) {
@@ -67,7 +111,7 @@ export default function MovieDetailsPage({
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* BACKDROP - középre igazítva + térközzel */}
+      {/* BACKDROP */}
       {movie.backdrop_path && (
         <div
           className="w-full flex justify-center py-8"
@@ -85,14 +129,14 @@ export default function MovieDetailsPage({
         </div>
       )}
 
-      {/* MAIN INFO – igazítva a backdrop szélességéhez */}
+      {/* MAIN INFO */}
       <div className="w-full flex justify-center py-10">
         <div className="max-w-6xl w-full px-4">
           <div
             className="flex flex-col md:flex-row gap-10 items-start"
             style={{ marginTop: "1rem" }}
           >
-            {/* POSTER – mobilon középen, desktopon bal oldalon */}
+            {/* POSTER */}
             <div className="flex justify-center md:justify-start w-full md:w-auto">
               <Image
                 src={
@@ -107,7 +151,7 @@ export default function MovieDetailsPage({
               />
             </div>
 
-            {/* TEXT INFO – a poster mellett egy sorban desktopon */}
+            {/* TEXT INFO */}
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-1xl !font-bold text-blue-800 mb-2">
                 {movie.title}
@@ -137,16 +181,24 @@ export default function MovieDetailsPage({
                 {movie.overview}
               </p>
 
-              <button
-                onClick={toggleFavorite}
-                className={`px-6 py-3 rounded-lg font-semibold transition ${
-                  isFavorite
-                    ? "bg-green-500 hover:bg-green-600 text-white"
-                    : "bg-blue-800 hover:bg-blue-700 text-white"
-                }`}
-              >
-                {isFavorite ? "Added to Favorites ✔" : "Add to Favorites"}
-              </button>
+              {/* FAVORITE BUTTON — csak bejelentkezve */}
+              {session && (
+                <button
+                  onClick={toggleFavorite}
+                  disabled={favLoading}
+                  className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    isFavorite
+                      ? "bg-green-500 hover:bg-green-600 text-white"
+                      : "bg-blue-800 hover:bg-blue-700 text-white"
+                  } ${favLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                >
+                  {favLoading
+                    ? "Saving..."
+                    : isFavorite
+                    ? "Added to Favorites ✔"
+                    : "Add to Favorites"}
+                </button>
+              )}
             </div>
           </div>
         </div>

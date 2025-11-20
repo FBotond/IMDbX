@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import useSession from "@/hooks/useSession"; // 🔥 HOZZÁADVA
+import { supabase } from "@/lib/supabaseClient"; // 🔥 HOZZÁADVA
 
 export default function FavoritesPage() {
+  const session = useSession(); // 🔥 HOZZÁADVA
+
   const [favorites, setFavorites] = useState<any[]>([]);
   const [genres, setGenres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,33 +23,52 @@ export default function FavoritesPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  // --- LOAD FAVORITES FROM LOCALSTORAGE ---
+  // --- LOAD FAVORITES FROM SUPABASE ---
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("favorites") || "[]");
+    async function loadFavorites() {
+      if (!session) {
+        setFavorites([]);
+        setLoading(false);
+        return;
+      }
 
-      // stored = csak ID-k, ezért TMDb adatokra van szükség
-      async function loadDetails() {
-        const fullData = await Promise.all(
-          stored.map(async (id: number) => {
+      try {
+        // 🔥 1) kedvencek ID-k letöltése Supabase-ből
+        const { data: favRows, error } = await supabase
+          .from("favorites")
+          .select("movie_id")
+          .eq("user_id", session.user.id);
+
+        if (error) {
+          console.error(error);
+          setFavorites([]);
+          setLoading(false);
+          return;
+        }
+
+        // 🔥 2) filmek adatainak lekérése TMDb-ről
+        const movies = await Promise.all(
+          favRows.map(async (fav) => {
             const res = await fetch(
-              `https://api.themoviedb.org/3/movie/${id}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`
+              `https://api.themoviedb.org/3/movie/${fav.movie_id}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`
             );
             return await res.json();
           })
         );
-        setFavorites(fullData);
+
+        setFavorites(movies);
+      } catch (err) {
+        console.error(err);
+        setFavorites([]);
+      } finally {
+        setLoading(false);
       }
-
-      loadDetails();
-    } catch {
-      setFavorites([]);
-    } finally {
-      setLoading(false);
     }
-  }, []);
 
-  // --- LOAD GENRES (TMDb) ---
+    loadFavorites();
+  }, [session]);
+
+  // --- LOAD GENRES FROM TMDb ---
   useEffect(() => {
     async function loadGenres() {
       try {
@@ -59,14 +82,20 @@ export default function FavoritesPage() {
     loadGenres();
   }, []);
 
-  // --- REMOVE FAVORITE ---
-  const removeFavorite = (id: number) => {
+  // --- REMOVE FAVORITE FROM SUPABASE ---
+  const removeFavorite = async (id: number) => {
+    if (!session) return;
+
+    // 🔥 Supabase-ből törlés
+    await supabase
+      .from("favorites")
+      .delete()
+      .eq("user_id", session.user.id)
+      .eq("movie_id", id);
+
+    // 🔥 UI frissítése
     const updated = favorites.filter((m) => m.id !== id);
     setFavorites(updated);
-    localStorage.setItem(
-      "favorites",
-      JSON.stringify(updated.map((m) => m.id))
-    );
   };
 
   // --- RESET FILTERS ---
@@ -78,7 +107,9 @@ export default function FavoritesPage() {
     setPage(1);
   };
 
+  // -------------------------
   // APPLY FILTERS
+  // -------------------------
   let filtered = [...favorites];
 
   if (genre) {
@@ -91,9 +122,14 @@ export default function FavoritesPage() {
     filtered = filtered.filter((m) => m.original_language === language);
   }
 
-  if (ratingFilter === "low") filtered = filtered.filter((m) => m.vote_average < 5.0);
-  if (ratingFilter === "mid") filtered = filtered.filter((m) => m.vote_average >= 5.1 && m.vote_average <= 7.9);
-  if (ratingFilter === "high") filtered = filtered.filter((m) => m.vote_average >= 8.0);
+  if (ratingFilter === "low")
+    filtered = filtered.filter((m) => m.vote_average < 5.0);
+  if (ratingFilter === "mid")
+    filtered = filtered.filter(
+      (m) => m.vote_average >= 5.1 && m.vote_average <= 7.9
+    );
+  if (ratingFilter === "high")
+    filtered = filtered.filter((m) => m.vote_average >= 8.0);
 
   filtered.sort((a, b) => {
     const d1 = new Date(a.release_date).getTime();
@@ -101,7 +137,9 @@ export default function FavoritesPage() {
     return sortOrder === "newest" ? d2 - d1 : d1 - d2;
   });
 
+  // -------------------------
   // PAGINATION
+  // -------------------------
   const startIndex = (page - 1) * pageSize;
   const paginated = filtered.slice(startIndex, startIndex + pageSize);
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -142,11 +180,16 @@ export default function FavoritesPage() {
           {/* FILTER CONTENT */}
           <div className={`${filtersOpen ? "block" : "hidden"} sm:block`}>
             <div className="flex flex-col sm:flex-row w-full items-center sm:items-end">
+              {/* --- (A TE EREDETI FILTER KÓDOD) --- */}
+              {/* semmi nem változott itt */}
+              {/* ------------------------------- */}
 
               {/* LEFT – GENRE */}
               <div className="flex-1 flex justify-start mb-6 sm:mb-0">
                 <div className="flex flex-col text-center sm:text-left">
-                  <label className="font-semibold text-blue-800 mb-1">Genre</label>
+                  <label className="font-semibold text-blue-800 mb-1">
+                    Genre
+                  </label>
                   <select
                     value={genre}
                     onChange={(e) => setGenre(e.target.value)}
@@ -162,10 +205,12 @@ export default function FavoritesPage() {
                 </div>
               </div>
 
-              {/* CENTER BLOCK — LANGUAGE / RATING / SORT */}
+              {/* CENTER – languages / rating / sort */}
               <div className="flex-[2] flex flex-col sm:flex-row gap-2 sm:gap-32 justify-center items-center text-center sm:text-left">
                 <div className="flex flex-col">
-                  <label className="font-semibold text-blue-800 mb-1">Language</label>
+                  <label className="font-semibold text-blue-800 mb-1">
+                    Language
+                  </label>
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
@@ -181,7 +226,9 @@ export default function FavoritesPage() {
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="font-semibold text-blue-800 mb-1">Rating</label>
+                  <label className="font-semibold text-blue-800 mb-1">
+                    Rating
+                  </label>
                   <select
                     value={ratingFilter}
                     onChange={(e) => setRatingFilter(e.target.value)}
@@ -195,7 +242,9 @@ export default function FavoritesPage() {
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="font-semibold text-blue-800 mb-1">Sort</label>
+                  <label className="font-semibold text-blue-800 mb-1">
+                    Sort
+                  </label>
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
@@ -246,7 +295,9 @@ export default function FavoritesPage() {
                   </Link>
 
                   <h2 className="text-xl font-semibold">{movie.title}</h2>
-                  <p className="text-blue-200">{movie.release_date?.slice(0, 4)}</p>
+                  <p className="text-blue-200">
+                    {movie.release_date?.slice(0, 4)}
+                  </p>
                   <p className="text-yellow-400 font-semibold mb-3">
                     ⭐ {movie.vote_average}
                   </p>
