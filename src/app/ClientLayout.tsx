@@ -10,7 +10,7 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
 
-  // csak akkor jelenjen meg a Navbar, ha nem a főoldalon vagyunk
+  // csak akkor jelenjen meg a Navbar, ha nem a welcome oldalon vagyunk
   const showNavbar = pathname !== "/";
 
   return (

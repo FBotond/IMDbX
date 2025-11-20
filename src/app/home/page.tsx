@@ -7,7 +7,7 @@ export default function HomePage() {
   const [hottestMovie, setHottestMovie] = useState<any>(null);
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
-  // 🔥 Lekérjük a nap legnépszerűbb filmjét
+  // Lekérjük a nap legnépszerűbb filmjét
   useEffect(() => {
     async function loadTrending() {
       try {

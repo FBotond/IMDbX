@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import useSession from "@/hooks/useSession"; // 🔥 MEGMARAD
-import { supabase } from "@/lib/supabaseClient"; // 🔥 HOZZÁADVA
+import useSession from "@/hooks/useSession";
+import { supabase } from "@/lib/supabaseClient";
 
 interface MovieCardProps {
   id: number;
@@ -21,12 +21,12 @@ export default function SearchMovieCard({
   poster,
   rating,
 }: MovieCardProps) {
-  const session = useSession(); // 🔥 MEGMARAD
+  const session = useSession();
 
-  const [isFavorite, setIsFavorite] = useState<boolean>(false); // 🔥 localStorage törölve
-  const [favLoading, setFavLoading] = useState<boolean>(false); // 🔥 HOZZÁADVA
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [favLoading, setFavLoading] = useState<boolean>(false);
 
-  // 🔥 Supabase-ből betöltjük, hogy kedvenc-e
+  // Supabase-ből betöltjük, hogy kedvenceket
   useEffect(() => {
     const loadFavorite = async () => {
       if (!session) {
@@ -50,7 +50,7 @@ export default function SearchMovieCard({
     loadFavorite();
   }, [session, id]);
 
-  // 🔥 Supabase kedvenc hozzáadás / eltávolítás
+  // Supabase kedvenc hozzáadás / eltávolítás
   const toggleFavorite = async () => {
     if (!session) return;
 

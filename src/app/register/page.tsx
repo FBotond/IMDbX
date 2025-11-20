@@ -8,7 +8,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  // ────────────── CLEANUP: oldalt elhagyva törlődik ──────────────
+  //  oldalt elhagyva törlődik
   useEffect(() => {
     return () => {
       setEmail("");
@@ -29,18 +29,18 @@ export default function RegisterPage() {
     return password.length >= 8 && hasLetter && hasNumber;
   }
 
-  // ────────────── HANDLE REGISTER ──────────────
+  // reg kezelés
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
 
-    // 1) Email formátum ellenőrzés
+    // Email formátum ellenőrzés
     if (!isValidEmail(email)) {
       setMessage("Invalid email format.");
       return;
     }
 
-    // 2) Jelszó szabályok ellenőrzése
+    //Jelszó szabályok ellenőrzése
     if (!isValidPassword(password)) {
       setMessage(
         "Password must be at least 8 characters long and include letters and numbers."
@@ -48,22 +48,19 @@ export default function RegisterPage() {
       return;
     }
 
-    // 3) EMAIL LÉTEZÉS ELLENŐRZÉS (Supabase hack)
-    // Megpróbálunk belépni egy garantáltan hibás jelszóval
+    // EMAIL LÉTEZÉS ELLENŐRZÉS
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password: "wrong_password_123456789",
     });
 
-    // Ha a hiba "Invalid login credentials" → létezik az email
+    //Invalid login credentials
     if (signInError && signInError.message === "Invalid login credentials") {
       setMessage("This email is already registered.");
       return;
     }
 
-    // Ha más típusú hiba van → ez jó → nincs ilyen email → mehet a regisztráció
-
-    // 4) REGISZTRÁCIÓ
+    //REGISZTRÁCIÓ
     const { error } = await supabase.auth.signUp({ email, password });
 
     if (error) {

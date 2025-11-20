@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // 🔥 Store previous URL for redirect after login
+  //Store previous URL for redirect after login
   useEffect(() => {
     const previousUrl = document.referrer;
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  // 🔥 Clear fields when leaving the page
+  // Clear fields when leaving the page
   useEffect(() => {
     return () => {
       setEmail("");
@@ -43,19 +43,18 @@ export default function LoginPage() {
       return;
     }
 
-    // ------------- LOGIN HANDLING -----------------
     // Két külön hívás, hogy biztosan működjön a session politikád
 
     let loginResponse;
 
     if (keepLoggedIn) {
-      // 🔒 Permanent session (refresh token + stays logged in)
+      // Permanent session (refresh token + stays logged in)
       loginResponse = await supabase.auth.signInWithPassword(
         { email, password },
         { persistSession: true }
       );
     } else {
-      // 🕘 Session-only login (browser close = logout)
+      //Session-only login (browser close = logout)
       loginResponse = await supabase.auth.signInWithPassword(
         { email, password },
         { persistSession: false }
@@ -73,7 +72,7 @@ export default function LoginPage() {
       return;
     }
 
-    // 🔥 If NOT keep logged in → force remove all persistent tokens
+    //If NOT keep logged in, then force remove all persistent tokens
     if (!keepLoggedIn) {
       // Clear supabase persistent storage
       Object.keys(localStorage).forEach((key) => {
@@ -89,7 +88,7 @@ export default function LoginPage() {
       });
     }
 
-    // ------------ REDIRECT HANDLING ----------------
+    //REDIRECT HANDLING
 
     const redirectUrl = localStorage.getItem("redirectAfterLogin");
 
@@ -129,7 +128,7 @@ export default function LoginPage() {
             name="login-password-field"
           />
 
-          {/* 🔥 KEEP ME LOGGED IN */}
+          {/* Maradjak bejelentkezve */}
           <label className="flex items-center gap-2 mb-3 text-blue-800">
             <input
               type="checkbox"

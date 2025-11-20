@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { searchMovies, getPopularMovies } from "@/lib/tmdb";
 import SearchMovieCard from "../components/SearchMovieCard";
 
-import { supabase } from "@/lib/supabaseClient"; // 🔥 NEW
-import useSession from "@/hooks/useSession"; // 🔥 NEW
+import { supabase } from "@/lib/supabaseClient";
+import useSession from "@/hooks/useSession";
 
 export default function SearchClient() {
-  const session = useSession(); // 🔥 NEW
+  const session = useSession();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -24,9 +24,8 @@ export default function SearchClient() {
 
   const pageSize = 20;
 
-  // 🔥 NEW - Logging helper
   const logSearch = async (action: string, value: string) => {
-    if (!session) return; // csak bejelentkezve logoljuk
+    if (!session) return;
 
     await supabase.from("search_logs").insert({
       user_id: session.user.id,
@@ -67,7 +66,7 @@ export default function SearchClient() {
   const handleSearch = async () => {
     if (!query.trim()) return;
 
-    // 🔥 NEW — log search query
+    // log search query
     await logSearch("query", query);
 
     setLoading(true);
@@ -102,27 +101,27 @@ export default function SearchClient() {
     }
   };
 
-  // FILTER LOGGING — 🔥 HÁROM HELYEN LOGOLUNK
+  // HÁROM HELYEN LOGOLUNK
 
   // Genre change
   const handleGenreChange = (e: any) => {
     const value = e.target.value;
     setGenre(value);
-    logSearch("genre", value); // 🔥 NEW
+    logSearch("genre", value);
   };
 
   // Language change
   const handleLanguageChange = (e: any) => {
     const value = e.target.value;
     setLanguage(value);
-    logSearch("language", value); // 🔥 NEW
+    logSearch("language", value);
   };
 
   // Rating change
   const handleRatingChange = (e: any) => {
     const value = e.target.value;
     setRatingFilter(value);
-    logSearch("rating", value); // 🔥 NEW
+    logSearch("rating", value);
   };
 
   // APPLY FILTERS
@@ -198,7 +197,7 @@ export default function SearchClient() {
                   </label>
                   <select
                     value={genre}
-                    onChange={handleGenreChange} // 🔥 NEW
+                    onChange={handleGenreChange}
                     className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="">All</option>
@@ -220,7 +219,7 @@ export default function SearchClient() {
                   </label>
                   <select
                     value={language}
-                    onChange={handleLanguageChange} // 🔥 NEW
+                    onChange={handleLanguageChange}
                     className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="">All</option>
@@ -239,7 +238,7 @@ export default function SearchClient() {
                   </label>
                   <select
                     value={ratingFilter}
-                    onChange={handleRatingChange} // 🔥 NEW
+                    onChange={handleRatingChange}
                     className="px-3 py-2 rounded-lg border border-blue-300 bg-white"
                   >
                     <option value="all">All</option>

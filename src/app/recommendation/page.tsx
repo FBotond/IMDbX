@@ -18,7 +18,7 @@ export default function RecommendationPage() {
     async function load() {
       setLoading(true);
 
-      // 1) User favorites from Supabase
+      // Users favorite movies from Supabase
       const { data: favRows } = await supabase
         .from("favorites")
         .select("movie_id")
@@ -26,7 +26,7 @@ export default function RecommendationPage() {
 
       const favoriteIds = favRows?.map((r) => r.movie_id) || [];
 
-      // 2) Load search logs
+      // Load search logs
       const { data: logs } = await supabase
         .from("search_logs")
         .select("*")
@@ -43,7 +43,7 @@ export default function RecommendationPage() {
       const topRating = mostFrequent(count(logs, "rating"));
       const topOpenedMovies = mostFrequent(count(logs, "open_movie"));
 
-      // --- TMDB calls ---
+      // TMDB calls
       let movies: any[] = [];
 
       // Similar to favorites

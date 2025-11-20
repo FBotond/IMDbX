@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import useSession from "@/hooks/useSession"; // 🔥 HOZZÁADVA
-import { supabase } from "@/lib/supabaseClient"; // 🔥 HOZZÁADVA
+import useSession from "@/hooks/useSession";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function FavoritesPage() {
-  const session = useSession(); // 🔥 HOZZÁADVA
+  const session = useSession();
 
   const [favorites, setFavorites] = useState<any[]>([]);
   const [genres, setGenres] = useState<any[]>([]);
@@ -23,7 +23,7 @@ export default function FavoritesPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  // --- LOAD FAVORITES FROM SUPABASE ---
+  // LOAD FAVORITES FROM SUPABASE
   useEffect(() => {
     async function loadFavorites() {
       if (!session) {
@@ -33,7 +33,7 @@ export default function FavoritesPage() {
       }
 
       try {
-        // 🔥 1) kedvencek ID-k letöltése Supabase-ből
+        // Kedvencek ID-k letöltése Supabase-ből
         const { data: favRows, error } = await supabase
           .from("favorites")
           .select("movie_id")
@@ -46,7 +46,7 @@ export default function FavoritesPage() {
           return;
         }
 
-        // 🔥 2) filmek adatainak lekérése TMDb-ről
+        // Filmek adatainak lekérése TMDb-ről
         const movies = await Promise.all(
           favRows.map(async (fav) => {
             const res = await fetch(
@@ -68,7 +68,7 @@ export default function FavoritesPage() {
     loadFavorites();
   }, [session]);
 
-  // --- LOAD GENRES FROM TMDb ---
+  // LOAD GENRES FROM TMDb
   useEffect(() => {
     async function loadGenres() {
       try {
@@ -82,23 +82,22 @@ export default function FavoritesPage() {
     loadGenres();
   }, []);
 
-  // --- REMOVE FAVORITE FROM SUPABASE ---
   const removeFavorite = async (id: number) => {
     if (!session) return;
 
-    // 🔥 Supabase-ből törlés
+    // Supabase-ből törlés
     await supabase
       .from("favorites")
       .delete()
       .eq("user_id", session.user.id)
       .eq("movie_id", id);
 
-    // 🔥 UI frissítése
+    // UI frissítése
     const updated = favorites.filter((m) => m.id !== id);
     setFavorites(updated);
   };
 
-  // --- RESET FILTERS ---
+  // RESET FILTERS
   const handleResetFilters = () => {
     setGenre("");
     setLanguage("");
@@ -107,9 +106,7 @@ export default function FavoritesPage() {
     setPage(1);
   };
 
-  // -------------------------
   // APPLY FILTERS
-  // -------------------------
   let filtered = [...favorites];
 
   if (genre) {
@@ -137,9 +134,7 @@ export default function FavoritesPage() {
     return sortOrder === "newest" ? d2 - d1 : d1 - d2;
   });
 
-  // -------------------------
   // PAGINATION
-  // -------------------------
   const startIndex = (page - 1) * pageSize;
   const paginated = filtered.slice(startIndex, startIndex + pageSize);
   const totalPages = Math.ceil(filtered.length / pageSize);
