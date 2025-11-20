@@ -59,14 +59,9 @@ export default function LoginPage() {
       return;
     }
 
-    //If NOT keep logged in:del refresh token
+    //If NOT keep logged in: session-only login
     if (!keepLoggedIn) {
-      //session-only login: refresh token törlése
-      await supabase.auth.updateUser({
-        data: { force_session_only: true },
-      });
-
-      // Biztonsági törlés minden persistent storage-ből
+      // Delete all persistent tokens
       Object.keys(localStorage).forEach((key) => {
         if (key.includes("supabase") || key.includes("sb-")) {
           localStorage.removeItem(key);
@@ -78,6 +73,14 @@ export default function LoginPage() {
           sessionStorage.removeItem(key);
         }
       });
+
+      // Store session in sessionStorage
+      if (data?.session) {
+        sessionStorage.setItem("sb-session", JSON.stringify(data.session));
+      }
+
+      // Tell middleware that sessionStorage session exists
+      document.cookie = "sessionStorageSession=true; path=/";
     }
 
     //REDIRECT HANDLING

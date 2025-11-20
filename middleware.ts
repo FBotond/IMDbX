@@ -34,11 +34,18 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // 🎯 SESSION-ONLY LOGIN KEZELÉSE
+  // Ha NINCS refresh token cookie, de van access token → engedjük be
+  const hasAccessToken = req.cookies.has("sb-access-token");
+  const hasRefreshToken = req.cookies.has("sb-refresh-token");
+
+  const sessionOnly = hasAccessToken && !hasRefreshToken;
+
   const protectedRoutes = ["/favorites", "/recommendation"];
   const pathname = req.nextUrl.pathname;
 
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-    if (!session) {
+    if (!session && !sessionOnly) {
       const redirectUrl = req.nextUrl.clone();
       redirectUrl.pathname = "/login";
       return NextResponse.redirect(redirectUrl);
