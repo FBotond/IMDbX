@@ -319,7 +319,7 @@ export default function SearchClient() {
                   year={
                     movie.release_date
                       ? parseInt(movie.release_date.substring(0, 4))
-                      : "N/A"
+                      : 0
                   }
                   rating={movie.vote_average}
                   poster={
