@@ -46,7 +46,7 @@ export default function LoginPage() {
       password,
     });
 
-    const { error: loginError, data } = loginResponse;
+    const { error: loginError } = loginResponse;
 
     if (loginError) {
       if (loginError.message.includes("Invalid login credentials")) {
@@ -55,16 +55,6 @@ export default function LoginPage() {
         setError(loginError.message);
       }
       return;
-    }
-
-    // SESSION-ONLY LOGIN (nem marad bejelentkezve)
-    if (!keepLoggedIn) {
-      await supabase.auth.signOut();
-
-      await supabase.auth.setSession({
-        access_token: data.session!.access_token,
-        refresh_token: "",
-      });
     }
 
     const redirectUrl = localStorage.getItem("redirectAfterLogin");
@@ -104,15 +94,6 @@ export default function LoginPage() {
             autoComplete="new-password"
             name="login-password-field"
           />
-
-          <label className="flex items-center gap-2 mb-3 text-blue-800">
-            <input
-              type="checkbox"
-              checked={keepLoggedIn}
-              onChange={(e) => setKeepLoggedIn(e.target.checked)}
-            />
-            Keep me logged in
-          </label>
 
           {error && <p className="text-red-600 mb-3">{error}</p>}
 
