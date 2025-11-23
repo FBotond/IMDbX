@@ -20,7 +20,7 @@ export default function MovieDetailsPage({
 
   const session = useSession();
 
-  // 🔥 NEW — film megnyitás logolása a recommendation rendszerhez
+  //  film megnyitás logolása a recommendation rendszerhez
   useEffect(() => {
     if (!session) return;
 

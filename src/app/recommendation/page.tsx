@@ -99,6 +99,9 @@ export default function RecommendationPage() {
         }, {})
       );
 
+      const filtered = uniq.filter((m: any) => !favoriteIds.includes(m.id));
+
+      setRecommended(filtered.slice(0, 40));
       setRecommended(uniq.slice(0, 40));
       setLoading(false);
     }
